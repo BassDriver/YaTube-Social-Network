@@ -140,13 +140,17 @@ dmypy.json
 .vscode/
 *.code-workspace
 
+yatube/static/css/
+
+yatube/media/
+
 # Local History for Visual Studio Code
 .history/
 
 .mypy_cache
 
-# папки со статикой и медиа
-static/
-yatube/posts/static/
-yatube/media/
-
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
