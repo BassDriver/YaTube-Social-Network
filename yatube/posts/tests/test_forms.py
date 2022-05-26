@@ -4,7 +4,6 @@ import tempfile
 from django.conf import settings
 from django.contrib.auth import get_user
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db.models.fields.files import ImageField, ImageFieldFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
@@ -29,13 +28,13 @@ PROFILE_URL = reverse('posts:profile', args=[USERNAME])
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 IMAGE = Post.image.field.upload_to
 SMALL_GIF = (
-            b'\x47\x49\x46\x38\x39\x61\x02\x00'
-            b'\x01\x00\x80\x00\x00\x00\x00\x00'
-            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-            b'\x0A\x00\x3B'
-        )
+    b'\x47\x49\x46\x38\x39\x61\x02\x00'
+    b'\x01\x00\x80\x00\x00\x00\x00\x00'
+    b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+    b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+    b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+    b'\x0A\x00\x3B'
+)
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
@@ -120,7 +119,6 @@ class PostCreateFormTests(TestCase):
     def test_can_create_post_with_group(self):
         """Проверка создания поста через форму и перенаправления"""
         post_count = Post.objects.count()
-        
         uploaded = SimpleUploadedFile(
             name='small.gif',
             content=SMALL_GIF,
@@ -197,7 +195,6 @@ class PostCreateFormTests(TestCase):
     def test_anonymous_create_post_with_group(self):
         """Аноним не может создать пост через форму"""
         post_count = Post.objects.count()
-        
         uploaded = SimpleUploadedFile(
             name='small.gif',
             content=SMALL_GIF,
@@ -215,7 +212,7 @@ class PostCreateFormTests(TestCase):
         )
         self.assertEqual(Post.objects.count(), post_count)
         self.assertRedirects(response, self.REDIRECT_NON_AUTHOR)
-    
+
     def test_anonymous_add_comment_to_existing_post(self):
         """Аноним не может добавить комментарий к посту через форму"""
         comments_count = Comment.objects.count()
@@ -233,7 +230,7 @@ class PostCreateFormTests(TestCase):
     def test_anonymous_update_post_with_group(self):
         """Аноним/не автор не может обновить пост через форму"""
         cases = [
-            [self.guest, self.REDIRECT_ANONYMOUS_POST_EDIT], 
+            [self.guest, self.REDIRECT_ANONYMOUS_POST_EDIT],
             [self.another, self.POST_DETAIL_URL],
         ]
         for client, redirect in cases:

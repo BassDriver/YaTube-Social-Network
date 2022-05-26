@@ -30,13 +30,13 @@ PROFILE_URL_SECOND_PAGE = f'{PROFILE_URL}?page=2'
 GROUP_URL_SECOND_PAGE = f'{GROUP_URL}?page=2'
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 SMALL_GIF = (
-            b'\x47\x49\x46\x38\x39\x61\x02\x00'
-            b'\x01\x00\x80\x00\x00\x00\x00\x00'
-            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-            b'\x0A\x00\x3B'
-        )
+    b'\x47\x49\x46\x38\x39\x61\x02\x00'
+    b'\x01\x00\x80\x00\x00\x00\x00\x00'
+    b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+    b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+    b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+    b'\x0A\x00\x3B'
+)
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
@@ -85,15 +85,15 @@ class PostViewsTests(TestCase):
             content_type='image/jpeg'
         )
         return uploaded_img
-    
+
     def test_caches_index_page(self):
         """Проверка работы кэш на странице index"""
         cache.clear()
         response = self.client.get(HOMEPAGE_URL)
         post = Post.objects.create(
-                    author=self.user,
-                    text='some text',
-                )
+            author=self.user,
+            text='some text',
+        )
         response_upd = self.client.get(HOMEPAGE_URL)
         self.assertEqual(response_upd.content, response.content)
         cache.clear()
@@ -111,7 +111,7 @@ class PostViewsTests(TestCase):
             [HOMEPAGE_URL, 'page_obj', self.authorized],
             [PROFILE_URL, 'page_obj', self.authorized],
             [GROUP_URL, 'page_obj', self.authorized],
-            [FOLLOW_LIST_URL,'page_obj', self.another],
+            [FOLLOW_LIST_URL, 'page_obj', self.another],
             [self.POST_DETAIL_URL, 'post', self.authorized]
         ]
         for url, object, client in url_context:
