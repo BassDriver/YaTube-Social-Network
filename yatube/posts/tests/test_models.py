@@ -37,7 +37,7 @@ class PostModelTest(TestCase):
         """Проверяем, что у моделей корректно работает __str__."""
         exp_group_name = self.group.title
         exp_post_text = self.post.text[:settings.MAX_NUM_CHARS_POST]
-        exp_comment_text = self.comment.text[:settings.MAX_NUM_CHARS_POST]
+        exp_comment_text = self.comment.text[:settings.MAX_NUM_CHARS_COMMENT]
         self.assertEqual(exp_group_name, str(self.group))
         self.assertEqual(exp_post_text, str(self.post))
         self.assertEqual(exp_comment_text, str(self.comment))

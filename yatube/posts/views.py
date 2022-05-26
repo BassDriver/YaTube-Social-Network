@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, get_list_or_404, redirect, render
 from django.views.decorators.cache import cache_page
 
 
@@ -33,28 +33,23 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    context = {
-        'author': author,
-        'page_obj': page(author.posts.all(), request),
-        'following': False,
-    }
-    if request.user.is_authenticated:
-        if Follow.objects.filter(
+    following = False
+    if request.user.is_authenticated and Follow.objects.filter(
             user=request.user,
             author=author,
         ).exists():
-            context['following'] = True
-    return render(request, 'posts/profile.html', context)
+            following = True
+    return render(request, 'posts/profile.html', {
+        'author': author,
+        'page_obj': page(author.posts.all(), request),
+        'following': following,
+    })
 
 
 def post_detail(request, post_id):
-    post = get_object_or_404(Post, pk=post_id)
-    comments = Comment.objects.filter(post_id=post_id)
-    form = CommentForm(request.POST or None)
     return render(request, 'posts/post_detail.html', {
-        'post': post,
-        'form': form,
-        'comments': comments
+        'post': get_object_or_404(Post, pk=post_id),
+        'form': CommentForm(request.POST or None),
     })
 
 
@@ -63,9 +58,9 @@ def post_create(request):
     form = PostForm(request.POST or None, files=request.FILES or None)
     if not form.is_valid():
         return render(request, 'posts/create_post.html', {'form': form})
-    new_post = form.save(commit=False)
-    new_post.author = request.user
-    new_post = new_post.save()
+    post = form.save(commit=False)
+    post.author = request.user
+    post = post.save()
     return redirect('posts:profile', request.user)
 
 
@@ -114,19 +109,14 @@ def profile_follow(request, username):
             user=request.user,
             author=author,
         )
-        return redirect('posts:follow_index')
     return redirect('posts:profile', username)
 
 
 @login_required
 def profile_unfollow(request, username):
     author = get_object_or_404(User, username=username)
-    if Follow.objects.filter(
-        user=request.user,
-        author=author,
-    ).exists():
-        Follow.objects.get(
-            user=request.user,
-            author=author,
-        ).delete()
+    if request.user != author:
+        follow = get_object_or_404(Follow,
+            user=request.user, author=author)
+        follow.delete()
     return redirect('posts:profile', username)

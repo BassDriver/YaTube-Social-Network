@@ -25,9 +25,18 @@ GROUP_URL = reverse('posts:group_posts', args=[TEST_SLUG])
 GROUP_ADD_URL = reverse('posts:group_posts', args=[TEST_SLUG_ADD])
 PROFILE_URL = reverse('posts:profile', args=[USERNAME])
 HOMEPAGE_URL_SECOND_PAGE = f'{HOMEPAGE_URL}?page=2'
+FOLLOW_LIST_URL_SECOND_PAGE = f'{FOLLOW_LIST_URL}?page=2'
 PROFILE_URL_SECOND_PAGE = f'{PROFILE_URL}?page=2'
 GROUP_URL_SECOND_PAGE = f'{GROUP_URL}?page=2'
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
+SMALL_GIF = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
@@ -69,33 +78,45 @@ class PostViewsTests(TestCase):
 
     @staticmethod
     def create_image(filename):
-        small_img = (
-            b'\x47\x49\x46\x38\x39\x61\x02\x00'
-            b'\x01\x00\x80\x00\x00\x00\x00\x00'
-            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-            b'\x0A\x00\x3B'
-        )
+        small_img = SMALL_GIF
         uploaded_img = SimpleUploadedFile(
             name=f'{filename}.jpeg',
             content=small_img,
             content_type='image/jpeg'
         )
         return uploaded_img
+    
+    def test_caches_index_page(self):
+        """Проверка работы кэш на странице index"""
+        cache.clear()
+        response = self.client.get(HOMEPAGE_URL)
+        post = Post.objects.create(
+                    author=self.user,
+                    text='some text',
+                )
+        response_upd = self.client.get(HOMEPAGE_URL)
+        self.assertEqual(response_upd.content, response.content)
+        cache.clear()
+        response_new = self.client.get(HOMEPAGE_URL)
+        self.assertIn(post, response_new.context['page_obj'])
 
     def test_post_is_correctly_displayed_in_pages(self):
         """Созданный пост корректно отражается на всех страницах."""
         cache.clear()
+        Follow.objects.create(
+            user=self.noauthor,
+            author=self.post.author,
+        )
         url_context = [
-            [HOMEPAGE_URL, 'page_obj'],
-            [PROFILE_URL, 'page_obj'],
-            [GROUP_URL, 'page_obj'],
-            [self.POST_DETAIL_URL, 'post']
+            [HOMEPAGE_URL, 'page_obj', self.authorized],
+            [PROFILE_URL, 'page_obj', self.authorized],
+            [GROUP_URL, 'page_obj', self.authorized],
+            [FOLLOW_LIST_URL,'page_obj', self.another],
+            [self.POST_DETAIL_URL, 'post', self.authorized]
         ]
-        for url, object in url_context:
+        for url, object, client in url_context:
             with self.subTest(url=url):
-                response = self.authorized.get(url)
+                response = client.get(url)
                 if object != 'post':
                     self.assertEqual(len(response.context[object]), 1)
                     post = response.context[object][0]
@@ -124,21 +145,27 @@ class PostViewsTests(TestCase):
                 group=self.group_one
             ) for i in range(NUM_POSTS_TO_CREATE)
         )
+        Follow.objects.create(
+            user=self.noauthor,
+            author=self.post.author,
+        )
         posts_per_page_two = Post.objects.all().count() - POSTS_PER_PAGE_ONE
 
         url_posts = [
-            [HOMEPAGE_URL, POSTS_PER_PAGE_ONE],
-            [PROFILE_URL, POSTS_PER_PAGE_ONE],
-            [GROUP_URL, POSTS_PER_PAGE_ONE],
-            [HOMEPAGE_URL_SECOND_PAGE, posts_per_page_two],
-            [PROFILE_URL_SECOND_PAGE, posts_per_page_two],
-            [GROUP_URL_SECOND_PAGE, posts_per_page_two]
+            [HOMEPAGE_URL, POSTS_PER_PAGE_ONE, self.authorized],
+            [PROFILE_URL, POSTS_PER_PAGE_ONE, self.authorized],
+            [GROUP_URL, POSTS_PER_PAGE_ONE, self.authorized],
+            [FOLLOW_LIST_URL, POSTS_PER_PAGE_ONE, self.another],
+            [HOMEPAGE_URL_SECOND_PAGE, posts_per_page_two, self.authorized],
+            [PROFILE_URL_SECOND_PAGE, posts_per_page_two, self.authorized],
+            [GROUP_URL_SECOND_PAGE, posts_per_page_two, self.authorized],
+            [FOLLOW_LIST_URL_SECOND_PAGE, posts_per_page_two, self.another]
         ]
 
-        for url, exp_num_posts in url_posts:
-            with self.subTest(url=url):
+        for url, exp_num_posts, client in url_posts:
+            with self.subTest(url=url, num_posts=exp_num_posts):
                 self.assertEqual(len(
-                    self.client.get(url).context['page_obj']),
+                    client.get(url).context['page_obj']),
                     exp_num_posts
                 )
 
@@ -167,16 +194,13 @@ class PostViewsTests(TestCase):
             text='Новый коммент'
         )
         response = self.authorized.get(self.POST_DETAIL_URL)
-        self.assertEqual(len(response.context['comments']), 1)
-        self.assertEqual(
-            response.context['comments'][0].text, comment_for_post.text
-        )
-        self.assertEqual(
-            response.context['comments'][0].author, comment_for_post.author
-        )
+        comments = response.context.get('post').comments.all()
+        self.assertEqual(len(comments), 1)
+        self.assertEqual(comments[0].text, comment_for_post.text)
+        self.assertEqual(comments[0].author, comment_for_post.author)
 
     def test_follow_author_works_correctly(self):
-        """Проверка создания и удаление подписки на автора"""
+        """Проверка создания подписки на автора"""
         follow_count = Follow.objects.count()
         follower = Follow.objects.create(
             user=self.noauthor,
@@ -184,19 +208,39 @@ class PostViewsTests(TestCase):
         )
         self.assertEqual(Follow.objects.count(), follow_count + 1)
         self.assertEqual(
-            Post.objects.filter(author=follower.author).count(), 1
+            Follow.objects.filter(
+                user=follower.user,
+                author=follower.author
+            ).exists(), True
         )
         response = self.another.get(FOLLOW_LIST_URL)
         self.assertEqual(len(response.context['page_obj']), 1)
         post = response.context['page_obj'][0]
-        self.assertEqual(post.text, self.post.text)
-        self.assertEqual(post.author, follower.author)
-        self.assertEqual(post.group, self.group_one)
-        self.assertEqual(post.id, self.post.id)
-        self.assertEqual(post.image, self.post.image)
+        post_items = [
+            [post.text, self.post.text],
+            [post.author, follower.author],
+            [post.group, self.group_one],
+            [post.id, self.post.id],
+            [post.image, self.post.image],
+        ]
+        for content, exp_content in post_items:
+            with self.subTest(content=content):
+                self.assertEqual(content, exp_content)
 
-        # Удаление подписки
+    def test_unfollow_author_works_correctly(self):
+        """Проверка удаления подписки на автора"""
+        follow_count = Follow.objects.count()
+        follower = Follow.objects.create(
+            user=self.noauthor,
+            author=self.post.author,
+        )
+        self.assertEqual(Follow.objects.count(), follow_count + 1)
         follower.delete()
         self.assertEqual(Follow.objects.count(), follow_count)
-        response = self.another.get(reverse('posts:follow_index'))
-        self.assertEqual(len(response.context['page_obj']), 0)
+
+        self.assertEqual(
+            Follow.objects.filter(
+                user=self.user,
+                author=follower.author
+            ).exists(), False
+        )

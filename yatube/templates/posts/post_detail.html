@@ -3,7 +3,6 @@
   {{ post.text|truncatechars:30 }}
 {% endblock %}
 {% load thumbnail %}
-{% load user_filters %}
 {% block content %}
   <div class="container py-5">
     <div class="row">
@@ -39,33 +38,7 @@
           "{% url 'posts:update_post' post.pk %}">
           редактировать запись </a>
         {% endif %}
-        {% if user.is_authenticated %}
-          <div class="card my-4">
-            <h5 class="card-header">Добавить комментарий:</h5>
-            <div class="card-body">
-              <form method="post" action="{% url 'posts:add_comment' post.id %}">
-                {% csrf_token %}      
-                <div class="form-group mb-2">
-                  {{ form.text|addclass:"form-control" }}
-                </div>
-                <button type="submit" class="btn btn-primary">Отправить</button>
-             </form>
-           </div>
-         </div>
-       {% endif %}
-       <h5 class="card-header">Комментарии:</h5>
-       {% for comment in comments %}
-         <div class="media mb-4">
-           <div class="media-body">
-             <h5 class="mt-0">
-               <a href="{% url 'posts:profile' comment.author.username %}">
-                 {{ comment.author.username }}
-               </a>
-              </h5>
-              <p>{{ comment.text }}</p>
-           </div>
-          </div>
-        {% endfor %} 
+        {% include 'posts/includes/comments.html' %}
       </article>
     </div>
   </div>

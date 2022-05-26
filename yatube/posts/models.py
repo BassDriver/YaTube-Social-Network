@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -53,7 +54,6 @@ class Post(models.Model):
         ordering = ('-pub_date',)
 
     def __str__(self):
-        # выводим текст поста
         return self.text[:settings.MAX_NUM_CHARS_POST]
 
 
@@ -82,7 +82,7 @@ class Comment(models.Model):
         ordering = ('-created',)
 
     def __str__(self):
-        return self.text[:settings.MAX_NUM_CHARS_POST]
+        return self.text[:settings.MAX_NUM_CHARS_COMMENT]
 
 
 class Follow(models.Model):
@@ -102,3 +102,8 @@ class Follow(models.Model):
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+        unique_together = ['user', 'author']
+    
+    def clean(self):
+        if self.user == self.author:
+            raise ValidationError('User cannot signup for himself')

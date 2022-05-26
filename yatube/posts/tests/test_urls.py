@@ -19,6 +19,10 @@ LOGIN_URL = reverse('users:login')
 FOLLOW_LIST_URL = reverse('posts:follow_index')
 FOLLOW_URL = reverse('posts:profile_follow', args=[USERNAME])
 UNFOLLOW_URL = reverse('posts:profile_unfollow', args=[USERNAME])
+REDIRECT_NON_AUTHOR = f'{LOGIN_URL}?next={POST_CREATE_URL}'
+REDIRECT_ANONYMOUS_FOLLOW_LIST = f'{LOGIN_URL}?next={FOLLOW_LIST_URL}'
+REDIRECT_ANONYMOUS_FOLLOW = f'{LOGIN_URL}?next={FOLLOW_URL}'
+REDIRECT_ANONYMOUS_UNFOLLOW = f'{LOGIN_URL}?next={UNFOLLOW_URL}'
 OK = 200
 REDIRECT = 302
 
@@ -46,26 +50,8 @@ class PostURLTests(TestCase):
         cls.POST_EDIT_URL = reverse(
             'posts:update_post', args=[cls.post.id]
         )
-        cls.POST_COMMENT_URL = reverse(
-            'posts:add_comment', args=[cls.post.id]
-        )
         cls.REDIRECT_ANONYMOUS_POST_EDIT = (
             f'{LOGIN_URL}?next={cls.POST_EDIT_URL}'
-        )
-        cls.REDIRECT_NON_AUTHOR = (
-            f'{LOGIN_URL}?next={POST_CREATE_URL}'
-        )
-        cls.REDIRECT_ANONYMOUS_POST_COMMENT = (
-            f'{LOGIN_URL}?next={cls.POST_COMMENT_URL}'
-        )
-        cls.REDIRECT_ANONYMOUS_FOLLOW_LIST = (
-            f'{LOGIN_URL}?next={FOLLOW_LIST_URL}'
-        )
-        cls.REDIRECT_ANONYMOUS_FOLLOW = (
-            f'{LOGIN_URL}?next={FOLLOW_URL}'
-        )
-        cls.REDIRECT_ANONYMOUS_UNFOLLOW = (
-            f'{LOGIN_URL}?next={UNFOLLOW_URL}'
         )
         cls.guest = Client()
         cls.author = Client()
@@ -92,9 +78,6 @@ class PostURLTests(TestCase):
             [POST_CREATE_URL, self.guest, REDIRECT],
             [self.POST_EDIT_URL, self.another, REDIRECT],
             [self.POST_EDIT_URL, self.guest, REDIRECT],
-            [self.POST_COMMENT_URL, self.guest, REDIRECT],
-            [self.POST_COMMENT_URL, self.author, REDIRECT],
-            [self.POST_COMMENT_URL, self.another, REDIRECT],
             [FOLLOW_LIST_URL, self.guest, REDIRECT],
             [FOLLOW_URL, self.guest, REDIRECT],
             [UNFOLLOW_URL, self.guest, REDIRECT],
@@ -113,21 +96,15 @@ class PostURLTests(TestCase):
             [self.POST_EDIT_URL, self.another,
                 self.POST_DETAIL_URL],
             [POST_CREATE_URL, self.guest,
-                self.REDIRECT_NON_AUTHOR],
-            [self.POST_COMMENT_URL, self.guest,
-                self.REDIRECT_ANONYMOUS_POST_COMMENT],
-            [self.POST_COMMENT_URL, self.author,
-                self.POST_DETAIL_URL],
-            [self.POST_COMMENT_URL, self.another,
-                self.POST_DETAIL_URL],
+                REDIRECT_NON_AUTHOR],
             [FOLLOW_LIST_URL, self.guest,
-                self.REDIRECT_ANONYMOUS_FOLLOW_LIST],
+                REDIRECT_ANONYMOUS_FOLLOW_LIST],
             [FOLLOW_URL, self.guest,
-                self.REDIRECT_ANONYMOUS_FOLLOW],
+                REDIRECT_ANONYMOUS_FOLLOW],
             [FOLLOW_URL, self.author, PROFILE_URL],
-            [FOLLOW_URL, self.another, FOLLOW_LIST_URL],
+            [FOLLOW_URL, self.another, PROFILE_URL],
             [UNFOLLOW_URL, self.guest,
-                self.REDIRECT_ANONYMOUS_UNFOLLOW],
+                REDIRECT_ANONYMOUS_UNFOLLOW],
             [UNFOLLOW_URL, self.author, PROFILE_URL],
             [UNFOLLOW_URL, self.another, PROFILE_URL],
         ]

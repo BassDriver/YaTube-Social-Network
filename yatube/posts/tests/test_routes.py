@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
 
+from posts.urls import app_name
+
 USERNAME = 'HasNoName'
 POST_ID = 1
 SLUG = 'test-slug'
@@ -18,10 +20,10 @@ CASES = [
 ]
 
 
-class PostURLTests(TestCase):
+class PostRoutesTests(TestCase):
     def test_posts_page_routes_works_as_intended(self):
         """Проверяем корректность маршрута страниц приложения posts"""
         for url, view_name, param in CASES:
-            response = reverse(f'posts:{view_name}', args=param)
+            response = reverse(f'{app_name}:{view_name}', args=param)
             with self.subTest(url=url):
                 self.assertEqual(url, response)

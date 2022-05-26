@@ -147,7 +147,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 
 MAX_NUM_POSTS_PER_PAGE = 10
-MAX_NUM_CHARS_POST = 15
+MAX_NUM_CHARS_POST = 30
+MAX_NUM_CHARS_COMMENT = 30
 
 CACHES = {
     'default': {
