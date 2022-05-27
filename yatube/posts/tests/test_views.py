@@ -210,7 +210,6 @@ class PostViewsTests(TestCase):
         self.another.get(FOLLOW_URL)
         self.assertTrue(Follow.objects.all().exists())
 
-
     def test_unfollow_author_works_correctly(self):
         """Проверка удаления подписки на автора"""
         Follow.objects.create(
