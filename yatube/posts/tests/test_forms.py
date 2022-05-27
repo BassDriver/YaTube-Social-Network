@@ -93,28 +93,28 @@ class PostCreateFormTests(TestCase):
         text_label = self.post_form.fields['text'].label
         group_label = self.post_form.fields['group'].label
         image_label = self.post_form.fields['image'].label
-        self.assertEquals(text_label, 'Текст')
-        self.assertEquals(group_label, 'Группа')
-        self.assertEquals(image_label, 'Картинка')
+        self.assertEqual(text_label, 'Текст')
+        self.assertEqual(group_label, 'Группа')
+        self.assertEqual(image_label, 'Картинка')
 
     def test_post_form_help_text(self):
         """Проверка подсказок полей формы поста"""
         title_text_label = self.post_form.fields['text'].help_text
         title_group_label = self.post_form.fields['group'].help_text
         title_image_label = self.post_form.fields['image'].help_text
-        self.assertEquals(title_text_label, 'Введите текст.')
-        self.assertEquals(title_group_label, 'Выберите группу')
-        self.assertEquals(title_image_label, 'Выберите картинку')
+        self.assertEqual(title_text_label, 'Введите текст.')
+        self.assertEqual(title_group_label, 'Выберите группу')
+        self.assertEqual(title_image_label, 'Выберите картинку')
 
     def test_comment_form_labels(self):
         """Проверка лейблов поля формы коммента"""
         text_label = self.comment_form.fields['text'].label
-        self.assertEquals(text_label, 'Текст')
+        self.assertEqual(text_label, 'Текст')
 
     def test_comment_form_help_text(self):
         """Проверка подсказок поля формы коммента"""
         title_text_label = self.comment_form.fields['text'].help_text
-        self.assertEquals(title_text_label, 'Введите текст комментария')
+        self.assertEqual(title_text_label, 'Введите текст комментария')
 
     def test_can_create_post_with_group(self):
         """Проверка создания поста через форму и перенаправления"""
@@ -173,7 +173,6 @@ class PostCreateFormTests(TestCase):
 
     def test_can_add_comment_to_existing_post(self):
         """Добавление комментария к посту через форму работает корректно"""
-        post_count = Post.objects.count()
         comments_count = Comment.objects.count()
         form_data = {
             'text': COMMENT,
@@ -183,15 +182,13 @@ class PostCreateFormTests(TestCase):
             data=form_data,
             follow=True
         )
-        self.assertEqual(Post.objects.count(), post_count)
         self.assertEqual(Comment.objects.count(), comments_count + 1)
         self.assertRedirects(response, self.POST_DETAIL_URL)
-        self.assertEqual(self.post.comments.count(), 1)
-        self.assertEqual(len(self.post.comments.all()), 1)
-        comments = self.post.comments.all()[0]
-        self.assertEqual(comments.text, form_data['text'])
-        self.assertEqual(comments.author, self.user)
-        self.assertEqual(comments.post, self.post)
+        comments = self.post.comments.all()
+        self.assertEqual(len(comments),1)
+        comment = self.post.comments.all()[0]
+        self.assertEqual(comment.post, self.post)
+        
 
     def test_anonymous_create_post_with_group(self):
         """Аноним не может создать пост через форму"""
@@ -211,8 +208,7 @@ class PostCreateFormTests(TestCase):
             data=form_data,
             follow=True
         )
-        posts = set(Post.objects.all()) - posts
-        self.assertEqual(len(posts), 0)
+        self.assertEqual(set(Post.objects.all()), posts)
         self.assertRedirects(response, REDIRECT_NON_AUTHOR)
 
     def test_anonymous_add_comment_to_existing_post(self):
@@ -226,8 +222,7 @@ class PostCreateFormTests(TestCase):
             data=form_data,
             follow=True
         )
-        comments = set(Comment.objects.all()) - comments
-        self.assertEqual(len(comments), 0)
+        self.assertEqual(set(Comment.objects.all()),comments)
         self.assertRedirects(response, self.REDIRECT_ANONYMOUS_POST_COMMENT)
 
     def test_anonymous_update_post_with_group(self):
@@ -256,12 +251,11 @@ class PostCreateFormTests(TestCase):
                 )
                 self.assertEqual(Post.objects.count(), post_count)
                 self.assertRedirects(response, redirect)
-                self.assertNotEqual(self.post.text, form_data['text'])
-                self.assertNotEqual(self.post.group.id, form_data['group'])
-                self.assertNotEqual(
-                    self.post.author, get_user(client).username
-                )
-                self.assertNotEqual(self.post.image, form_data['image'])
+                post = Post.objects.get(pk=self.post.id)
+                self.assertEqual(self.post.text, post.text)
+                self.assertEqual(self.post.group.id, post.group.id)
+                self.assertEqual(self.post.author, post.author)
+                self.assertEqual(self.post.image, post.image)
 
     def test_create_and_edit_page_show_correct_context(self):
         """Шаблон поста сформирован с правильным контекстом."""

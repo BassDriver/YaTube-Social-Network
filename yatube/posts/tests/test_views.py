@@ -203,12 +203,13 @@ class PostViewsTests(TestCase):
 
     def test_follow_author_works_correctly(self):
         """Проверка создания подписки на автора"""
-        response = self.another.get(FOLLOW_LIST_URL)
-        page_object = response.context.get('page_obj').object_list
-        self.assertEqual((len(page_object)), 0)
+        Follow.objects.create(
+            user=self.noauthor,
+            author=self.post.author,
+        )
         self.another.get(FOLLOW_URL)
-        response = self.another.get(FOLLOW_LIST_URL)
-        self.assertEqual((len(response.context['page_obj'])), 1)
+        self.assertTrue(Follow.objects.all().exists())
+
 
     def test_unfollow_author_works_correctly(self):
         """Проверка удаления подписки на автора"""
@@ -216,10 +217,5 @@ class PostViewsTests(TestCase):
             user=self.noauthor,
             author=self.post.author,
         )
-        response = self.another.get(FOLLOW_LIST_URL)
-        page_object = response.context.get('page_obj').object_list
-        self.assertEqual((len(page_object)), 1)
         self.another.get(UNFOLLOW_URL)
-        response = self.another.get(FOLLOW_LIST_URL)
-        page_object = response.context.get('page_obj').object_list
-        self.assertEqual((len(page_object)), 0)
+        self.assertFalse(Follow.objects.all().exists())
