@@ -12,7 +12,7 @@
       <h4>Всего подписчиков: {{ author.following.count }} </h4>
       <h4>Всего подписок: {{ author.follower.count }} </h4>
       <h4>Всего комментариев: {{ author.comments.count }} </h4>
-      {% if user.is_authenticated %}
+      {% if user.is_authenticated and user != author %}
         {% if following %}
           <a class="btn btn-lg btn-light"
             href="{% url 'posts:profile_unfollow' author.username %}"
@@ -25,7 +25,8 @@
       {% endif %}
     </div>
     {% for post in page_obj %}
-      {% include 'posts/includes/posts.html' with post=post %}
+      {% include 'posts/includes/post_item.html' %}
+      {% if not forloop.last %}<hr>{% endif %}
     {% endfor %}
     {% include 'posts/includes/paginator.html' %}
   </div>

@@ -25,6 +25,9 @@ COMMENT = 'Тестовый комментарий'
 POST_CREATE_URL = reverse('posts:post_create')
 LOGIN_URL = reverse('users:login')
 PROFILE_URL = reverse('posts:profile', args=[USERNAME])
+REDIRECT_NON_AUTHOR = (
+    f'{LOGIN_URL}?next={POST_CREATE_URL}'
+)
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 IMAGE = Post.image.field.upload_to
 SMALL_GIF = (
@@ -72,9 +75,6 @@ class PostCreateFormTests(TestCase):
         cls.POST_DETAIL_URL = reverse('posts:post_detail', args=[cls.post.id])
         cls.POST_COMMENT_URL = reverse(
             'posts:add_comment', args=[cls.post.id]
-        )
-        cls.REDIRECT_NON_AUTHOR = (
-            f'{LOGIN_URL}?next={POST_CREATE_URL}'
         )
         cls.REDIRECT_ANONYMOUS_POST_COMMENT = (
             f'{LOGIN_URL}?next={cls.POST_COMMENT_URL}'
@@ -187,14 +187,15 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(Comment.objects.count(), comments_count + 1)
         self.assertRedirects(response, self.POST_DETAIL_URL)
         self.assertEqual(self.post.comments.count(), 1)
-        comments = response.context.get('post').comments.all()
-        self.assertEqual(len(comments), 1)
-        self.assertEqual(comments[0].text, form_data['text'])
-        self.assertEqual(comments[0].author, self.user)
+        self.assertEqual(len(self.post.comments.all()), 1)
+        comments = self.post.comments.all()[0]
+        self.assertEqual(comments.text, form_data['text'])
+        self.assertEqual(comments.author, self.user)
+        self.assertEqual(comments.post, self.post)
 
     def test_anonymous_create_post_with_group(self):
         """Аноним не может создать пост через форму"""
-        post_count = Post.objects.count()
+        posts = set(Post.objects.all())
         uploaded = SimpleUploadedFile(
             name='small.gif',
             content=SMALL_GIF,
@@ -210,12 +211,13 @@ class PostCreateFormTests(TestCase):
             data=form_data,
             follow=True
         )
-        self.assertEqual(Post.objects.count(), post_count)
-        self.assertRedirects(response, self.REDIRECT_NON_AUTHOR)
+        posts = set(Post.objects.all()) - posts
+        self.assertEqual(len(posts), 0)
+        self.assertRedirects(response, REDIRECT_NON_AUTHOR)
 
     def test_anonymous_add_comment_to_existing_post(self):
         """Аноним не может добавить комментарий к посту через форму"""
-        comments_count = Comment.objects.count()
+        comments = set(Comment.objects.all())
         form_data = {
             'text': COMMENT,
         }
@@ -224,7 +226,8 @@ class PostCreateFormTests(TestCase):
             data=form_data,
             follow=True
         )
-        self.assertEqual(Comment.objects.count(), comments_count)
+        comments = set(Comment.objects.all()) - comments
+        self.assertEqual(len(comments), 0)
         self.assertRedirects(response, self.REDIRECT_ANONYMOUS_POST_COMMENT)
 
     def test_anonymous_update_post_with_group(self):
@@ -253,10 +256,10 @@ class PostCreateFormTests(TestCase):
                 )
                 self.assertEqual(Post.objects.count(), post_count)
                 self.assertRedirects(response, redirect)
-                post = client.get(self.POST_DETAIL_URL).context.get('post')
-                self.assertEqual(post.text, self.post.text)
-                self.assertEqual(post.group.id, self.post.group.id)
-                self.assertEqual(post.author, self.post.author)
+                self.assertNotEqual(self.post.text, form_data['text'])
+                self.assertNotEqual(self.post.group.id, form_data['group'])
+                self.assertNotEqual(self.post.author, get_user(client).username)
+                self.assertNotEqual(self.post.image, form_data['image'])
 
     def test_create_and_edit_page_show_correct_context(self):
         """Шаблон поста сформирован с правильным контекстом."""

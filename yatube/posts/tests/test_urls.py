@@ -25,6 +25,7 @@ REDIRECT_ANONYMOUS_FOLLOW = f'{LOGIN_URL}?next={FOLLOW_URL}'
 REDIRECT_ANONYMOUS_UNFOLLOW = f'{LOGIN_URL}?next={UNFOLLOW_URL}'
 OK = 200
 REDIRECT = 302
+NOT_AVAILABLE = 404
 
 
 class PostURLTests(TestCase):
@@ -73,7 +74,7 @@ class PostURLTests(TestCase):
             [FOLLOW_LIST_URL, self.another, OK],
             [FOLLOW_URL, self.author, REDIRECT],
             [FOLLOW_URL, self.another, REDIRECT],
-            [UNFOLLOW_URL, self.author, REDIRECT],
+            [UNFOLLOW_URL, self.author, NOT_AVAILABLE],
             [UNFOLLOW_URL, self.another, REDIRECT],
             [POST_CREATE_URL, self.guest, REDIRECT],
             [self.POST_EDIT_URL, self.another, REDIRECT],
@@ -93,19 +94,13 @@ class PostURLTests(TestCase):
         redirect_cases = [
             [self.POST_EDIT_URL, self.guest,
                 self.REDIRECT_ANONYMOUS_POST_EDIT],
-            [self.POST_EDIT_URL, self.another,
-                self.POST_DETAIL_URL],
-            [POST_CREATE_URL, self.guest,
-                REDIRECT_NON_AUTHOR],
-            [FOLLOW_LIST_URL, self.guest,
-                REDIRECT_ANONYMOUS_FOLLOW_LIST],
-            [FOLLOW_URL, self.guest,
-                REDIRECT_ANONYMOUS_FOLLOW],
+            [self.POST_EDIT_URL, self.another, self.POST_DETAIL_URL],
+            [POST_CREATE_URL, self.guest, REDIRECT_NON_AUTHOR],
+            [FOLLOW_LIST_URL, self.guest, REDIRECT_ANONYMOUS_FOLLOW_LIST],
+            [FOLLOW_URL, self.guest, REDIRECT_ANONYMOUS_FOLLOW],
             [FOLLOW_URL, self.author, PROFILE_URL],
             [FOLLOW_URL, self.another, PROFILE_URL],
-            [UNFOLLOW_URL, self.guest,
-                REDIRECT_ANONYMOUS_UNFOLLOW],
-            [UNFOLLOW_URL, self.author, PROFILE_URL],
+            [UNFOLLOW_URL, self.guest, REDIRECT_ANONYMOUS_UNFOLLOW],
             [UNFOLLOW_URL, self.another, PROFILE_URL],
         ]
         for url, client, redirect in redirect_cases:

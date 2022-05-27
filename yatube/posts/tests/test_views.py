@@ -24,6 +24,8 @@ POST_CREATE_URL = reverse('posts:post_create')
 GROUP_URL = reverse('posts:group_posts', args=[TEST_SLUG])
 GROUP_ADD_URL = reverse('posts:group_posts', args=[TEST_SLUG_ADD])
 PROFILE_URL = reverse('posts:profile', args=[USERNAME])
+FOLLOW_URL = reverse('posts:profile_follow', args=[USERNAME])
+UNFOLLOW_URL = reverse('posts:profile_unfollow', args=[USERNAME])
 HOMEPAGE_URL_SECOND_PAGE = f'{HOMEPAGE_URL}?page=2'
 FOLLOW_LIST_URL_SECOND_PAGE = f'{FOLLOW_LIST_URL}?page=2'
 PROFILE_URL_SECOND_PAGE = f'{PROFILE_URL}?page=2'
@@ -201,46 +203,23 @@ class PostViewsTests(TestCase):
 
     def test_follow_author_works_correctly(self):
         """Проверка создания подписки на автора"""
-        follow_count = Follow.objects.count()
-        follower = Follow.objects.create(
-            user=self.noauthor,
-            author=self.post.author,
-        )
-        self.assertEqual(Follow.objects.count(), follow_count + 1)
-        self.assertEqual(
-            Follow.objects.filter(
-                user=follower.user,
-                author=follower.author
-            ).exists(), True
-        )
         response = self.another.get(FOLLOW_LIST_URL)
-        self.assertEqual(len(response.context['page_obj']), 1)
-        post = response.context['page_obj'][0]
-        post_items = [
-            [post.text, self.post.text],
-            [post.author, follower.author],
-            [post.group, self.group_one],
-            [post.id, self.post.id],
-            [post.image, self.post.image],
-        ]
-        for content, exp_content in post_items:
-            with self.subTest(content=content):
-                self.assertEqual(content, exp_content)
+        page_object = response.context.get('page_obj').object_list
+        self.assertEqual((len(page_object)), 0)
+        self.another.get(FOLLOW_URL)
+        response = self.another.get(FOLLOW_LIST_URL)
+        self.assertEqual((len(response.context['page_obj'])), 1)
 
     def test_unfollow_author_works_correctly(self):
         """Проверка удаления подписки на автора"""
-        follow_count = Follow.objects.count()
-        follower = Follow.objects.create(
+        Follow.objects.create(
             user=self.noauthor,
             author=self.post.author,
         )
-        self.assertEqual(Follow.objects.count(), follow_count + 1)
-        follower.delete()
-        self.assertEqual(Follow.objects.count(), follow_count)
-
-        self.assertEqual(
-            Follow.objects.filter(
-                user=self.user,
-                author=follower.author
-            ).exists(), False
-        )
+        response = self.another.get(FOLLOW_LIST_URL)
+        page_object = response.context.get('page_obj').object_list
+        self.assertEqual((len(page_object)), 1)
+        self.another.get(UNFOLLOW_URL)
+        response = self.another.get(FOLLOW_LIST_URL)
+        page_object = response.context.get('page_obj').object_list
+        self.assertEqual((len(page_object)), 0)
