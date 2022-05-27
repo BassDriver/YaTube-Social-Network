@@ -103,7 +103,9 @@ class Follow(models.Model):
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
         constraints = [
-        models.UniqueConstraint(fields=['user', 'author'], name="user-author")
+            models.UniqueConstraint(
+                fields=['user', 'author'], name="user-author"
+            )
         ]
 
     def clean(self):

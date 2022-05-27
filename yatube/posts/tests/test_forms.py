@@ -258,7 +258,9 @@ class PostCreateFormTests(TestCase):
                 self.assertRedirects(response, redirect)
                 self.assertNotEqual(self.post.text, form_data['text'])
                 self.assertNotEqual(self.post.group.id, form_data['group'])
-                self.assertNotEqual(self.post.author, get_user(client).username)
+                self.assertNotEqual(
+                    self.post.author, get_user(client).username
+                )
                 self.assertNotEqual(self.post.image, form_data['image'])
 
     def test_create_and_edit_page_show_correct_context(self):
