@@ -203,18 +203,20 @@ class PostViewsTests(TestCase):
 
     def test_follow_author_works_correctly(self):
         """Проверка создания подписки на автора"""
-        Follow.objects.create(
-            user=self.noauthor,
-            author=self.post.author,
-        )
         self.another.get(FOLLOW_URL)
-        self.assertTrue(Follow.objects.all().exists())
+        self.assertTrue(
+            Follow.objects.filter(
+                user=self.noauthor, author=self.user).exists()
+        )
 
     def test_unfollow_author_works_correctly(self):
         """Проверка удаления подписки на автора"""
         Follow.objects.create(
             user=self.noauthor,
-            author=self.post.author,
+            author=self.user,
         )
         self.another.get(UNFOLLOW_URL)
-        self.assertFalse(Follow.objects.all().exists())
+        self.assertFalse(
+            Follow.objects.filter(
+                user=self.noauthor, author=self.user).exists()
+        )

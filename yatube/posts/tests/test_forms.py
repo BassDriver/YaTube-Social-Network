@@ -184,10 +184,12 @@ class PostCreateFormTests(TestCase):
         )
         self.assertEqual(Comment.objects.count(), comments_count + 1)
         self.assertRedirects(response, self.POST_DETAIL_URL)
-        comments = self.post.comments.all()
+        comments = Comment.objects.all()
         self.assertEqual(len(comments), 1)
-        comment = self.post.comments.all()[0]
+        comment = comments[0]
         self.assertEqual(comment.post, self.post)
+        self.assertEqual(comment.text, form_data['text'])
+        self.assertEqual(comment.author, self.user)
 
     def test_anonymous_create_post_with_group(self):
         """Аноним не может создать пост через форму"""
