@@ -28,6 +28,8 @@ SECRET_KEY = 'vcf+#fl6$4)c63%oo(=#6t53^j$m$vp2()p3t*t^@^+*1zu581'
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    'www.bassdriver.pythonanywhere.com',
+    'bassdriver.pythonanywhere.com',
     'localhost',
     '127.0.0.1',
     '[::1]',
@@ -49,6 +51,7 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'about.apps.AboutConfig',
     'sorl.thumbnail',
+    'debug_toolbar',
 ]
 
 MIDDLEWARE = [
@@ -59,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'yatube.urls'
@@ -155,3 +159,7 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
+
+INTERNAL_IPS = [
+    '127.0.0.1',
+]

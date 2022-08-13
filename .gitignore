@@ -140,8 +140,6 @@ dmypy.json
 .vscode/
 *.code-workspace
 
-yatube/static/css/
-
 yatube/media/
 
 # Local History for Visual Studio Code
